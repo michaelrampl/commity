@@ -1,0 +1,73 @@
+sections:
+  - title: Committy
+    entries:
+
+      - type: Text
+        mode: Required
+        name: ticket_nr
+        label: Ticket-Nr
+        description: Please insert the Jira Ticket Number
+        minLength: 0
+        maxLength: 0
+        multiLine: false
+        default: "ticket default"
+
+      - type: Choice
+        mode: Required
+        name: type
+        label: Type
+        description: Type of the commit
+        default: feat
+        choices: 
+          - value: feat
+            label: This commit introduces a new feature
+          - value: fix
+            label: This commit fixes a bug
+          - value: docs
+            label: Everything related to documentation
+          - value: test
+            label: Everything related to testing
+          - value: ci
+            label: Modifications on the build system or steps of the CI pipeline
+          - value: perf
+            label: Performance improvements
+          - value: refactor
+            label: Refactoring a specific section of the codebase
+          - value: revert
+            label: Reverting existing code
+          - value: style
+            label: Code style or non functional modifications
+          - value: chore
+            label: Regular code maintenance. Should only be sparsely used if nothing else applied
+
+      - type: Text
+        mode: Required
+        name: header
+        label: Header
+        description: Meaningful but value description about what has changed
+        minLength: 0
+        maxLength: 0
+        multiLine: false
+        default: "header default"
+  
+      - type: Text
+        mode: Optional
+        name: body
+        label: Body
+        description: Optional detailed description to answering why and how something has been changed
+        minLength: 0
+        maxLength: 0
+        multiLine: true
+        default: "body default"
+  
+      - type: Boolean
+        mode: Required
+        name: breaking_change
+        label: Breaking Change
+        description: Whether or not the code may break some dependencies
+        default: true
+
+template: |
+  {{ ticket_nr }}({{ type }}){% if breaking_change %}!{% endif %}: {{ header }}{% if body %}
+
+  {{ body }}{% endif %}
