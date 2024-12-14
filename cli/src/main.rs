@@ -39,8 +39,8 @@ impl Symbol {
                 TuiSymbols::NerdFont => "󰌑",
             },
             Symbol::Escape => match symbols {
-                TuiSymbols::None => "⎋",
-                TuiSymbols::Unicode => "⏎",
+                TuiSymbols::None => "ESC",
+                TuiSymbols::Unicode => "␛",
                 TuiSymbols::NerdFont => "󱊷",
             },
             Symbol::Next => match symbols {
@@ -55,7 +55,7 @@ impl Symbol {
             },
             Symbol::Page => match symbols {
                 TuiSymbols::None => "Page",
-                TuiSymbols::Unicode => "⏎",
+                TuiSymbols::Unicode => "Page",
                 TuiSymbols::NerdFont => "",
             },
             Symbol::Input => match symbols {
@@ -130,7 +130,7 @@ fn draw_frame(
                 Style::default().add_modifier(Modifier::DIM),
             ),
             Span::styled(
-                format!(" • [{}] quit", Symbol::Escape.query(&tui_config.symbols)),
+                format!(" • [{}] Quit", Symbol::Escape.query(&tui_config.symbols)),
                 Style::default().add_modifier(Modifier::DIM),
             ),
             if page != 1 {
@@ -149,7 +149,7 @@ fn draw_frame(
                 )
             } else {
                 Span::styled(
-                    format!("[{}] Select", Symbol::Enter.query(&tui_config.symbols)),
+                    format!("[{}] Accept", Symbol::Enter.query(&tui_config.symbols)),
                     Style::default().add_modifier(Modifier::DIM),
                 )
             },
@@ -449,7 +449,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         section_index -= 1; // Move to the previous section
                         entry_index = section_entries_len - 1; // Last entry of the previous section
                     }
-                    page -= 1; // Adjust page counter
+                    if page > 1 {
+                        page -= 1;
+                    }
                 }
                 InputResult::Quit => {
                     disable_raw_mode()?;

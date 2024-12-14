@@ -38,13 +38,6 @@ pub enum Entry {
     Boolean(EntryBoolean),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub enum EntryMode {
-    Required,
-    Optional,
-    Hidden,
-}
-
 //-----------------------------------------------------------------------------
 // Section
 
@@ -61,7 +54,6 @@ pub struct Section {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EntryText {
-    pub mode: EntryMode,
     pub name: String,
     pub label: String,
     pub description: String,
@@ -86,7 +78,6 @@ pub struct Choice {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EntryChoice {
-    pub mode: EntryMode,
     pub name: String,
     pub label: String,
     pub description: String,
@@ -102,7 +93,6 @@ pub struct EntryChoice {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EntryBoolean {
-    pub mode: EntryMode,
     pub name: String,
     pub label: String,
     pub description: String,
@@ -149,7 +139,7 @@ pub struct TUIConfig {
 impl Default for TUIConfig {
     fn default() -> Self {
         TUIConfig {
-            symbols: TuiSymbols::NerdFont,
+            symbols: TuiSymbols::Unicode,
         }
     }
 }
