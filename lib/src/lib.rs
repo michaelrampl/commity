@@ -69,6 +69,8 @@ pub struct EntryText {
     pub max_length: i64,
     pub multi_line: bool,
     pub default: String,
+    #[serde(skip_deserializing)]
+    pub value: String,
 }
 
 //-----------------------------------------------------------------------------
@@ -90,6 +92,8 @@ pub struct EntryChoice {
     pub description: String,
     pub choices: Vec<Choice>,
     pub default: String,
+    #[serde(skip_deserializing)]
+    pub value: String,
 }
 
 //-----------------------------------------------------------------------------
@@ -103,6 +107,68 @@ pub struct EntryBoolean {
     pub label: String,
     pub description: String,
     pub default: bool,
+    #[serde(skip_deserializing)]
+    pub value: bool,
+}
+
+//-----------------------------------------------------------------------------
+// Initialize data dir
+
+fn init_data_dir() -> Result<PathBuf, Box<dyn std::error::Error>> {
+    // Get the data directory and append "commity"
+    let app_data_dir = dirs::data_local_dir()
+        .ok_or("Unable to determine the data directory")?
+        .join("commity");
+
+    // Check if the directory exists, and create it if necessary
+    if !app_data_dir.exists() {
+        fs::create_dir_all(&app_data_dir)
+            .map_err(|err| format!("Failed to create config directory: {}", err))?;
+    }
+
+    Ok(app_data_dir)
+}
+
+//-----------------------------------------------------------------------------
+// App Config
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum TuiSymbols {
+    None,
+    Unicode,
+    NerdFont,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TUIConfig {
+    pub symbols: TuiSymbols,
+}
+
+impl Default for TUIConfig {
+    fn default() -> Self {
+        TUIConfig {
+            symbols: TuiSymbols::NerdFont,
+        }
+    }
+}
+
+impl TUIConfig {
+    pub fn load() -> Result<Self, Box<dyn Error>> {
+        let app_data_dir = init_data_dir()?;
+
+        let config_file_path = app_data_dir.join("tui_config.yaml");
+
+        if !config_file_path.exists() {
+            return Ok(TUIConfig::default());
+        }
+
+        let file = fs::File::open(&config_file_path)?;
+        let config: TUIConfig = serde_yml::from_reader(file)?;
+
+        Ok(config)
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -116,34 +182,52 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(current_dir: &Path) -> Result<Self, Box<dyn Error>> {
+    pub fn load(current_dir: &Path) -> Result<Self, Box<dyn Error>> {
+        let app_data_dir = init_data_dir()?;
+
         let repo_dir = find_git_repository(current_dir)?;
 
-        let config_path_repo = repo_dir.join(".commity.yaml");
-        let config_path_home = dirs::home_dir()
-            .ok_or("Unable to determine home directory")?
-            .join(".commity.yaml");
+        let config_local = repo_dir.join(".commity.yaml");
 
-        let config_path = if config_path_repo.exists() {
-            config_path_repo
-        } else if config_path_home.exists() {
-            config_path_home
+        let config_global = app_data_dir.join(".commity.yaml");
+
+        let config_path = if config_local.exists() {
+            config_local
+        } else if config_global.exists() {
+            config_global
         } else {
             return Err(format!(
-                "No config file found in [{}] or [{}]",
-                config_path_repo.display(),
-                config_path_home.display()
+                "No config file found in {} or {}",
+                config_local.display(),
+                config_global.display()
             )
             .into());
         };
 
         load_config(&config_path)
     }
+
+    fn initialize_values(&mut self) {
+        for section in &mut self.sections {
+            for entry in &mut section.entries {
+                match entry {
+                    Entry::Text(entry_text) => entry_text.value = entry_text.default.clone(),
+                    Entry::Choice(entry_choice) => {
+                        entry_choice.value = entry_choice.default.clone()
+                    }
+                    Entry::Boolean(entry_boolean) => {
+                        entry_boolean.value = entry_boolean.default.clone()
+                    }
+                }
+            }
+        }
+    }
 }
 
 fn load_config(path: &Path) -> Result<Config, Box<dyn Error>> {
     let file = fs::File::open(path)?;
-    let config: Config = serde_yml::from_reader(file)?;
+    let mut config: Config = serde_yml::from_reader(file)?;
+    config.initialize_values();
     Ok(config)
 }
 
@@ -162,10 +246,10 @@ fn find_git_repository(start_dir: &Path) -> Result<PathBuf, Box<dyn Error>> {
     Err("No Git repository found".into())
 }
 
-//
+//-----------------------------------------------------------------------------
 // Rendering
 
-pub fn render_fields(
+pub fn render_message(
     data: HashMap<String, FieldValue>,
     template: &String,
 ) -> Result<String, Box<dyn Error>> {

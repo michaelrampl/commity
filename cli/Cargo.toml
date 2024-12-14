@@ -5,10 +5,8 @@ edition = "2021"
 
 [dependencies]
 tuirealm = { version = "2.0.3", default-features = false, features = [ "derive", "crossterm" ]}
-iocraft = "0.5.0"
 unicode-width = "0.2.0"
 smol = "2.0.2"
 commity-lib = { path = "../lib" }
 ratatui = "0.29.0"
 crossterm = "0.28.1"
-color-eyre = "0.6.3"
