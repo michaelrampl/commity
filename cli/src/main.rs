@@ -1,4 +1,7 @@
-use commity_lib::*;
+mod tui_config;
+use commity_lib::config::*;
+use commity_lib::render::*;
+
 use crossterm::{
     event::{self, Event, KeyCode},
     terminal::{disable_raw_mode, enable_raw_mode},
@@ -16,6 +19,7 @@ use std::{
     io::{self},
     process,
 };
+use tui_config::*;
 
 const COLOR_HIGHLIGHT: ratatui::prelude::Color = Color::Cyan;
 const MARGIN_LEFT: &str = "    ";
@@ -441,7 +445,7 @@ fn input_text(
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let current_dir = std::env::current_dir()?;
-    let mut config = Config::load(&current_dir)?;
+    let mut config = Configuration::load(&current_dir)?;
     let tui_config = TUIConfig::load()?;
 
     // find out maximum height

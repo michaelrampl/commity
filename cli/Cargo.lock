@@ -308,6 +308,8 @@ dependencies = [
  "commity-lib",
  "crossterm",
  "ratatui 0.29.0",
+ "serde",
+ "serde_yml",
  "smol",
  "tuirealm",
  "unicode-width 0.2.0",
