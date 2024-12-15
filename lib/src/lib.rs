@@ -130,16 +130,26 @@ pub enum TuiSymbols {
     NerdFont,
 }
 
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub enum TUILayout {
+    Inline,
+    Fullscreen,
+    FullscreenCenter,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TUIConfig {
     pub symbols: TuiSymbols,
+    pub layout: TUILayout,
 }
 
 impl Default for TUIConfig {
     fn default() -> Self {
         TUIConfig {
-            symbols: TuiSymbols::Unicode,
+            symbols: TuiSymbols::NerdFont,
+            layout: TUILayout::Inline,
         }
     }
 }
