@@ -28,10 +28,10 @@ jobs:
       run: |
         mkdir -p dist
         VERSION=${{ github.ref_name }}
-        GOOS=linux GOARCH=amd64 go build ./cmd/commity/ -o dist/commity-linux-amd64-${VERSION}
-        GOOS=windows GOARCH=amd64 go build ./cmd/commity/ -o dist/commity-windows-amd64-${VERSION}.exe
-        GOOS=darwin GOARCH=amd64 go build ./cmd/commity/ -o dist/commity-darwin-amd64-${VERSION}
-        GOOS=darwin GOARCH=arm64 go build ./cmd/commity/ -o dist/commity-darwin-arm64-${VERSION}
+        GOOS=linux GOARCH=amd64 go build -o dist/commity-linux-amd64-${VERSION} ./cmd/commity/
+        GOOS=windows GOARCH=amd64 go build -o dist/commity-windows-amd64-${VERSION}.exe ./cmd/commity/
+        GOOS=darwin GOARCH=amd64 go build -o dist/commity-darwin-amd64-${VERSION} ./cmd/commity/
+        GOOS=darwin GOARCH=arm64 go build -o dist/commity-darwin-arm64-${VERSION} ./cmd/commity/
 
     - name: Upload Release Assets
       uses: actions/upload-artifact@v3
