@@ -10,26 +10,31 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.20'
+        go-version: '1.23'
 
-    - name: Test
+    - name: Tidy dependencies
+      run: go mod tidy
+
+    - name: Run tests
       run: go test -v ./...
 
     - name: Build binaries
       run: |
         mkdir -p dist
-        GOOS=linux GOARCH=amd64 go build ./cmd/commity/ -o dist/commity-linux-amd64
-        GOOS=windows GOARCH=amd64 go build ./cmd/commity/ -o dist/commity-windows-amd64.exe
-        GOOS=darwin GOARCH=amd64 go build ./cmd/commity/ -o dist/commity-darwin-amd64
-        GOOS=darwin GOARCH=arm64 go build ./cmd/commity/ -o dist/commity-darwin-arm64
+        VERSION=${{ github.ref_name }}
+        GOOS=linux GOARCH=amd64 go build ./cmd/commity/ -o dist/commity-linux-amd64-${VERSION}
+        GOOS=windows GOARCH=amd64 go build ./cmd/commity/ -o dist/commity-windows-amd64-${VERSION}.exe
+        GOOS=darwin GOARCH=amd64 go build ./cmd/commity/ -o dist/commity-darwin-amd64-${VERSION}
+        GOOS=darwin GOARCH=arm64 go build ./cmd/commity/ -o dist/commity-darwin-arm64-${VERSION}
 
     - name: Upload Release Assets
       uses: actions/upload-artifact@v3
       with:
-        name: commity-binaries
+        name: commity-binaries-${{ github.ref_name }}
         path: dist/
