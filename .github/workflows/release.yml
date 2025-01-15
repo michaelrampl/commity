@@ -23,10 +23,10 @@ jobs:
     - name: Build binaries
       run: |
         mkdir -p dist
-        GOOS=linux GOARCH=amd64 go build -o dist/commity-linux-amd64
-        GOOS=windows GOARCH=amd64 go build -o dist/commity-windows-amd64.exe
-        GOOS=darwin GOARCH=amd64 go build -o dist/commity-darwin-amd64
-        GOOS=darwin GOARCH=arm64 go build -o dist/commity-darwin-arm64
+        GOOS=linux GOARCH=amd64 go build ./cmd/commity/ -o dist/commity-linux-amd64
+        GOOS=windows GOARCH=amd64 go build ./cmd/commity/ -o dist/commity-windows-amd64.exe
+        GOOS=darwin GOARCH=amd64 go build ./cmd/commity/ -o dist/commity-darwin-amd64
+        GOOS=darwin GOARCH=arm64 go build ./cmd/commity/ -o dist/commity-darwin-arm64
 
     - name: Upload Release Assets
       uses: actions/upload-artifact@v3
