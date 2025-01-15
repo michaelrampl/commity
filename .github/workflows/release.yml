@@ -33,8 +33,35 @@ jobs:
         GOOS=darwin GOARCH=amd64 go build -o dist/commity-darwin-amd64-${VERSION} ./cmd/commity/
         GOOS=darwin GOARCH=arm64 go build -o dist/commity-darwin-arm64-${VERSION} ./cmd/commity/
 
-    - name: Upload Release Assets
-      uses: actions/upload-artifact@v3
+    - name: Upload Linux Binary
+      uses: actions/upload-release-asset@v1
       with:
-        name: commity-binaries-${{ github.ref_name }}
-        path: dist/
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: dist/commity-linux-amd64-${{ github.ref_name }}
+        asset_name: commity-linux-amd64-${{ github.ref_name }}
+        asset_content_type: application/octet-stream
+
+    - name: Upload Windows Binary
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: dist/commity-windows-amd64-${{ github.ref_name }}.exe
+        asset_name: commity-windows-amd64-${{ github.ref_name }}.exe
+        asset_content_type: application/octet-stream
+
+    - name: Upload macOS Binary (amd64)
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: dist/commity-darwin-amd64-${{ github.ref_name }}
+        asset_name: commity-darwin-amd64-${{ github.ref_name }}
+        asset_content_type: application/octet-stream
+
+    - name: Upload macOS Binary (arm64)
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: dist/commity-darwin-arm64-${{ github.ref_name }}
+        asset_name: commity-darwin-arm64-${{ github.ref_name }}
+        asset_content_type: application/octet-stream
+
