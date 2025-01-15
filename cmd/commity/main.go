@@ -85,12 +85,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	addedFiles, err := utils.GetAddedFiles(directory)
+	hasStagedFiles, err := utils.HasStagedChanges(directory)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, style_error.Render(fmt.Sprintf("Error checking added files: %v", err)))
 		os.Exit(1)
 	}
-	if addedFiles == 0 {
+	if !hasStagedFiles {
 		fmt.Fprintln(os.Stderr, style_error.Render(fmt.Sprintf("Nothing to commit in %v", repoPath)))
 		os.Exit(1)
 	}

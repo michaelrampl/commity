@@ -156,41 +156,39 @@ func Commit(repoPath string, message string) error {
 	return nil
 }
 
-// GetAddedFiles returns a list of files that are marked as added in the Git repository.
+// HasStagedChanges checks if there are any staged changes in the specified Git repository.
 //
 // Arguments:
 // - repoPath: The path to the Git repository.
 //
 // Returns:
-// - A slice of strings representing the added files.
+// - A boolean indicating if there are staged changes.
 // - An error if the repository cannot be accessed or status cannot be retrieved.
-func GetAddedFiles(repoPath string) (int, error) {
+func HasStagedChanges(repoPath string) (bool, error) {
 	// Open the Git repository.
 	repo, err := git.PlainOpen(repoPath)
 	if err != nil {
-		return 0, fmt.Errorf("failed to open Git repository: %w", err)
+		return false, fmt.Errorf("failed to open Git repository: %w", err)
 	}
 
 	// Get the working tree.
 	worktree, err := repo.Worktree()
 	if err != nil {
-		return 0, fmt.Errorf("failed to get Git worktree: %w", err)
+		return false, fmt.Errorf("failed to get Git worktree: %w", err)
 	}
 
 	// Get the status of the working tree.
 	status, err := worktree.Status()
 	if err != nil {
-		return 0, fmt.Errorf("failed to get Git status: %w", err)
+		return false, fmt.Errorf("failed to get Git status: %w", err)
 	}
 
-	// Collect files with added status.
-	var addedFiles = 0
+	// Check if any file has a staged change.
 	for _, fileStatus := range status {
-		// Check if the file is added to the staging area or the working tree.
-		if fileStatus.Staging == git.Added || fileStatus.Worktree == git.Added {
-			addedFiles += 1
+		if fileStatus.Staging != git.Unmodified {
+			return true, nil
 		}
 	}
 
-	return addedFiles, nil
+	return false, nil
 }
