@@ -56,5 +56,5 @@ entries:
     default: false
 
 template: |
-  {{ .ticket_nr }}({{ .type }}){{ if .breaking_change }}!{{ end }}: {{ .header }}{{ if .body }}
+  {{ .type }}{{ if .breaking_change }}!{{ end }}: {{ .header }}{{ if .body }}
   {{ .body }}{{ end }}
