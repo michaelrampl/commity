@@ -1,0 +1,60 @@
+entries:
+
+  - type: Choice
+    mode: Required
+    name: type
+    label: Commit Type
+    description: What are you committing?
+    default: feat
+    choices: 
+      - value: feat
+        label: This commit introduces a new feature
+      - value: fix
+        label: This commit fixes a bug
+      - value: docs
+        label: Everything related to documentation
+      - value: test
+        label: Everything related to testing
+      - value: ci
+        label: Modifications on the build system or steps of the CI pipeline
+      - value: perf
+        label: Performance improvements
+      - value: refactor
+        label: Refactoring a specific section of the codebase
+      - value: revert
+        label: Reverting existing code
+      - value: style
+        label: Code style or non functional modifications
+      - value: chore
+        label: Regular code maintenance. Should only be sparsely used if nothing else applied
+
+  - type: Text
+    mode: Required
+    name: header
+    label: Commit Header
+    description: What did you change?
+    minLength: 0
+    maxLength: 0
+    multiLine: false
+    default: ""
+
+  - type: Text
+    mode: Optional
+    name: body
+    label: Commit Body
+    description: What are the details of your changes?
+    minLength: 0
+    maxLength: 0
+    multiLine: true
+    default: ""
+
+  - type: Boolean
+    mode: Required
+    name: breaking_change
+    label: Breaking Change
+    description: Are you commiting breaking changes?
+    default: false
+
+template: |
+  {{ .ticket_nr }}({{ .type }}){{ if .breaking_change }}!{{ end }}: {{ .header }}{{ if .body }}
+  {{ .body }}{{ end }}
