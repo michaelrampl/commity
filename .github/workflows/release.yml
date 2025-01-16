@@ -1,35 +1,46 @@
 name: Release
 
+
 on:
-  push:
-    tags:
-      - 'v*'
+  release:
+    types:
+      - published
+
 
 jobs:
 
   build:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.20'
+        go-version: '1.23'
 
-    - name: Test
+    - name: Tidy dependencies
+      run: go mod tidy
+
+    - name: Run tests
       run: go test -v ./...
 
     - name: Build binaries
       run: |
         mkdir -p dist
-        GOOS=linux GOARCH=amd64 go build -o dist/commity-linux-amd64
-        GOOS=windows GOARCH=amd64 go build -o dist/commity-windows-amd64.exe
-        GOOS=darwin GOARCH=amd64 go build -o dist/commity-darwin-amd64
-        GOOS=darwin GOARCH=arm64 go build -o dist/commity-darwin-arm64
+        VERSION=${{ github.ref_name }}
+        GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o dist/commity-linux-amd64-${VERSION} ./cmd/commity/
+        GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o dist/commity-windows-amd64-${VERSION}.exe ./cmd/commity/
+        GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o dist/commity-darwin-amd64-${VERSION} ./cmd/commity/
+        GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o dist/commity-darwin-arm64-${VERSION} ./cmd/commity/
 
     - name: Upload Release Assets
-      uses: actions/upload-artifact@v3
+      uses: softprops/action-gh-release@v1
       with:
-        name: commity-binaries
-        path: dist/
+        files: dist/*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
