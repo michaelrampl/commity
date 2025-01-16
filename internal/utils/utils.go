@@ -2,12 +2,13 @@ package utils
 
 import (
 	"bytes"
-	"commity/internal/config"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"text/template"
+
+	"github.com/michaelrampl/commity/internal/config"
 
 	"github.com/go-git/go-git/v5"
 )

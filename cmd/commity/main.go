@@ -1,10 +1,11 @@
 package main
 
 import (
-	"commity/internal/config"
-	"commity/internal/utils"
 	"fmt"
 	"os"
+
+	"github.com/michaelrampl/commity/internal/config"
+	"github.com/michaelrampl/commity/internal/utils"
 
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"

@@ -1,4 +1,4 @@
-module commity
+module github.com/michaelrampl/commity
 
 go 1.23
 
