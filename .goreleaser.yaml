@@ -16,6 +16,9 @@ builds:
       - arm64
     main: "./cmd/commity"
     binary: commity
+    ldflags:
+      - "-X 'main.VERSION={{.Version}}'"
+
 
 archives:
   - format: tar.gz

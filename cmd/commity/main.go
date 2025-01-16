@@ -1,8 +1,10 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/michaelrampl/commity/internal/config"
 	"github.com/michaelrampl/commity/internal/utils"
@@ -10,6 +12,27 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 )
+
+var VERSION = "MASTER"
+
+var style_error = lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
+var style_warning = lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
+var style_success = lipgloss.NewStyle().Foreground(lipgloss.Color("#233ee7"))
+
+type ParamMap map[string]string
+
+func (m *ParamMap) String() string {
+	return fmt.Sprintf("%v", *m)
+}
+
+func (m *ParamMap) Set(value string) error {
+	parts := strings.Split(value, "=")
+	if len(parts) != 2 {
+		return fmt.Errorf("invalid map entry: %s", value)
+	}
+	(*m)[parts[0]] = parts[1]
+	return nil
+}
 
 func getTheme() *huh.Theme {
 	var t *huh.Theme = huh.ThemeBase()
@@ -63,22 +86,7 @@ func getTheme() *huh.Theme {
 
 }
 
-func main() {
-	var style_error = lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
-	var style_warning = lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
-	var style_success = lipgloss.NewStyle().Foreground(lipgloss.Color("#233ee7"))
-
-	var directory string
-	if len(os.Args) > 1 {
-		directory = os.Args[1]
-	} else {
-		var err error
-		directory, err = os.Getwd()
-		if err != nil {
-			fmt.Fprintln(os.Stderr, style_error.Render(fmt.Sprintf("Error getting current directory: %v", err)))
-			os.Exit(1)
-		}
-	}
+func runCommity(directory string, paramMap ParamMap) {
 
 	repoPath, err := utils.FindGitRepository(directory)
 	if err != nil {
@@ -113,6 +121,9 @@ func main() {
 	for _, entry := range cfg.Entries {
 		switch e := entry.(type) {
 		case *config.TextEntry:
+			if paramMap[e.Name] != "" {
+				e.Value = paramMap[e.Name]
+			}
 			if e.MultiLine {
 				group := huh.NewGroup(huh.NewText().
 					Value(&e.Value).
@@ -133,6 +144,9 @@ func main() {
 			var options []huh.Option[string]
 			for _, choice := range e.Choices {
 				options = append(options, huh.NewOption(choice.Label, choice.Value))
+				if paramMap[e.Name] != "" && paramMap[e.Name] == choice.Value {
+					e.Value = paramMap[e.Name]
+				}
 			}
 
 			group := huh.NewGroup(huh.NewSelect[string]().
@@ -143,6 +157,13 @@ func main() {
 			)
 			groups = append(groups, group)
 		case *config.BooleanEntry:
+			if paramMap[e.Name] != "" {
+				if strings.ToLower(paramMap[e.Name]) == "true" || paramMap[e.Name] == "1" {
+					e.Value = true
+				} else {
+					e.Value = false
+				}
+			}
 			group := huh.NewGroup(huh.NewConfirm().
 				Value(&e.Value).
 				Title(e.Label).
@@ -181,5 +202,42 @@ func main() {
 
 	fmt.Println(style_success.Render("Commit successful!"))
 	fmt.Println(msg)
+}
+
+func main() {
+
+	// Define cmdline parameters
+	version := flag.Bool("version", false, "Print the version and exit")
+	help := flag.Bool("help", false, "Show help message and exit")
+	directory := flag.String("directory", "", "The directory to run commity in")
+	paramMap := ParamMap{}
+	flag.Var(&paramMap, "map", "Set default values for the form (e.g., -map key1=value1 -map key2=value2)")
+
+	// Parse the flags
+	flag.Parse()
+
+	// Handle version and help flags
+	if *version {
+		fmt.Printf("Version: %s\n", VERSION)
+		return
+	}
+	if *help {
+		fmt.Println("Usage: commity [options]")
+		fmt.Println("Options:")
+		flag.PrintDefaults()
+		return
+	}
+
+	// handle the project directory
+	var dir = *directory
+	var err error
+	if dir == "" {
+		dir, err = os.Getwd()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, style_error.Render(fmt.Sprintf("Error getting current directory: %v", err)))
+			os.Exit(1)
+		}
+	}
+	runCommity(dir, paramMap)
 
 }
