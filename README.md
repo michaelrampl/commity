@@ -1,6 +1,6 @@
 # Commity
 
-**Commity** is a powerful tool that helps you structure your Git commit messages **exactly** the way you want them. By guiding you through a customizable interface, Commity ensures consistency and clarity in your commit history.
+Make writing commit messages **fun** again.
 
 ---
 
@@ -28,29 +28,29 @@ The `.commity.yaml` file consists of two main sections:
 `entries` define the fields that Commity will prompt you to fill in. Each entry has the following properties:
 
 - **`type`**: Specifies the type of the field. Can be one of the following:
-  - `choice`: A predefined selection (e.g., dropdown, radio buttons).
-  - `boolean`: A simple Yes/No field.
-  - `text`: A text input field, which can be single-line or multi-line.
-- **`name`**: The identifier for the field, used to reference its value in the commit message template.
-- **`label`**: The label displayed in the Commity UI.
-- **`description`**: Additional information displayed in the UI.
-- **`default`**: The default value for the field (optional).
+  - `choice`: A **predefined** selection (similar to a dropdown or radio buttons)
+  - `boolean`: A simple Yes/No field
+  - `text`: A single-line or multi-line text input field
+- **`name`**: The identifier for the field, used to reference its value in the commit message template
+- **`label`**: The label displayed in the Commity UI
+- **`description`**: Additional information displayed in the UI
+- **`default`**: The default value for the field (optional)
 
 ##### Extended Properties for Field Types
 
 - **`choice`**
-  - The user selects between predefined options.
-  - Each choice includes:
-    - `value`: The value used in the commit message.
-    - `label`: The label displayed in the UI.
+  - The user selects between predefined options
+  - Offers a list `choices` which represent the individual options the user can select
+    - `value`: The value used in the commit message
+    - `label`: The label displayed in the UI
 - **`boolean`**
-  - A simple Yes/No field.
+  - A simple Yes/No field
 - **`text`**
-  - Allows users to input text.
+  - Allows users to input text
   - Additional properties:
-    - `multiLine`: (Boolean) Enables multi-line text input.
-    - `minLength`: Minimum length of the input (0 = no restriction).
-    - `maxLength`: Maximum length of the input (0 = no restriction).
+    - `multiLine`: (Boolean) Enables multi-line text input
+    - `minLength`: Minimum length of the input (0 = no restriction)
+    - `maxLength`: Maximum length of the input (0 = no restriction)
 
 
 #### 2. `template`
@@ -58,6 +58,8 @@ The `.commity.yaml` file consists of two main sections:
 The `template` section is a string that defines how the commit message is generated. 
 
 Commity uses Go’s [text/template](https://pkg.go.dev/text/template) engine for rendering. You can reference any `entry` value by using the `name` defined in the configuration. 
+
+For example if you have a text field named `title` you can refer to it by using `{{ .title }}` in the template string. It is also possible to conditionally render something by using `{{ if .<field_name> }}<render this>{{ end }}`.
 
 
 
