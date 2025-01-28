@@ -1,7 +1,6 @@
 entries:
 
   - type: Choice
-    mode: Required
     name: type
     label: Commit Type
     description: What are you committing?
@@ -29,7 +28,6 @@ entries:
         label: Regular code maintenance. Should only be sparsely used if nothing else applied
 
   - type: Text
-    mode: Required
     name: header
     label: Commit Header
     description: What did you change?
@@ -39,7 +37,6 @@ entries:
     default: ""
 
   - type: Text
-    mode: Optional
     name: body
     label: Commit Body
     description: What are the details of your changes?
@@ -49,7 +46,6 @@ entries:
     default: ""
 
   - type: Boolean
-    mode: Required
     name: breaking_change
     label: Breaking Change
     description: Are you commiting breaking changes?
