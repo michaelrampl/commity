@@ -45,6 +45,7 @@ The `.commity.yaml` file consists of two main sections:
   - Offers a list `choices` which represent the individual options the user can select
     - `value`: The value used in the commit message
     - `label`: The label displayed in the UI
+  - Setting `showValues` to true will also render the values in the TUI
 - **`boolean`**
   - A simple Yes/No field
 - **`text`**
@@ -98,6 +99,7 @@ entries:
         label: Code style or non functional modifications
       - value: chore
         label: Regular code maintenance. Should only be sparsely used if nothing else applied
+    showValues: true
     store: true
 
   - type: Text
