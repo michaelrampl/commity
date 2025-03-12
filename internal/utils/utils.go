@@ -47,12 +47,12 @@ func FindGitRepository(startDir string) (string, error) {
 	return "", fmt.Errorf("no Git repository found")
 }
 
-// getDataDir retrieves the application data directory path.
+// GetDataDir retrieves the application data directory path.
 // It constructs the path to the user's local configuration directory and appends the application-specific subdirectory.
 //
 // Returns:
 // - The path to the application data directory, or an error if the user's config directory cannot be determined.
-func getDataDir() (string, error) {
+func GetDataDir() (string, error) {
 	// Use os.UserConfigDir for the user's local config directory
 	dataDir, err := os.UserConfigDir()
 	if err != nil || dataDir == "" {
@@ -74,7 +74,7 @@ func getDataDir() (string, error) {
 // - A pointer to the Configuration struct loaded from the file, or an error if the file cannot be found or loaded.
 func LoadConfig(repoPath string) (*config.Configuration, error) {
 
-	dataDir, err := getDataDir()
+	dataDir, err := GetDataDir()
 	if err != nil {
 		return nil, err
 	}
@@ -157,39 +157,40 @@ func Commit(repoPath string, message string) error {
 	return nil
 }
 
-// HasStagedChanges checks if there are any staged changes in the specified Git repository.
+// GetStagedFiles checks if there are any staged changes in the specified Git repository.
 //
 // Arguments:
 // - repoPath: The path to the Git repository.
 //
 // Returns:
-// - A boolean indicating if there are staged changes.
+// - The number of staged files
 // - An error if the repository cannot be accessed or status cannot be retrieved.
-func HasStagedChanges(repoPath string) (bool, error) {
+func GetStagedFiles(repoPath string) (int, error) {
 	// Open the Git repository.
 	repo, err := git.PlainOpen(repoPath)
 	if err != nil {
-		return false, fmt.Errorf("failed to open Git repository: %w", err)
+		return 0, fmt.Errorf("failed to open Git repository: %w", err)
 	}
 
 	// Get the working tree.
 	worktree, err := repo.Worktree()
 	if err != nil {
-		return false, fmt.Errorf("failed to get Git worktree: %w", err)
+		return 0, fmt.Errorf("failed to get Git worktree: %w", err)
 	}
 
 	// Get the status of the working tree.
 	status, err := worktree.Status()
 	if err != nil {
-		return false, fmt.Errorf("failed to get Git status: %w", err)
+		return 0, fmt.Errorf("failed to get Git status: %w", err)
 	}
 
 	// Check if any file has a staged change.
+	stagedFiles := 0
 	for _, fileStatus := range status {
-		if fileStatus.Staging != git.Unmodified {
-			return true, nil
+		if fileStatus.Staging != git.Unmodified && fileStatus.Staging != git.Untracked {
+			stagedFiles++
 		}
 	}
 
-	return false, nil
+	return stagedFiles, nil
 }

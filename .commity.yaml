@@ -1,11 +1,10 @@
 entries:
-
   - type: Choice
     name: type
     label: Commit Type
     description: What are you committing?
     default: feat
-    choices: 
+    choices:
       - value: feat
         label: This commit introduces a new feature
       - value: fix
@@ -26,13 +25,14 @@ entries:
         label: Code style or non functional modifications
       - value: chore
         label: Regular code maintenance. Should only be sparsely used if nothing else applied
+    store: true
 
   - type: Text
     name: header
     label: Commit Header
     description: What did you change?
-    minLength: 0
-    maxLength: 0
+    minLength: 10
+    maxLength: 50
     multiLine: false
     default: ""
 
@@ -54,3 +54,5 @@ entries:
 template: |
   {{ .type }}{{ if .breaking_change }}!{{ end }}: {{ .header }}{{ if .body }}
   {{ .body }}{{ end }}
+
+overview: true

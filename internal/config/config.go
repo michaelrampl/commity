@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -20,11 +21,14 @@ type TextEntry struct {
 	Name        string `yaml:"name"`        // The unique name of the entry
 	Label       string `yaml:"label"`       // A user-friendly label for the entry
 	Description string `yaml:"description"` // A description of the entry
-	MinLength   int64  `yaml:"minLength"`   // Minimum length of the text
-	MaxLength   int64  `yaml:"maxLength"`   // Maximum length of the text
+	MinLength   int    `yaml:"minLength"`   // Minimum length of the text
+	MaxLength   int    `yaml:"maxLength"`   // Maximum length of the text
 	MultiLine   bool   `yaml:"multiLine"`   // Whether the text entry supports multiple lines
+	Pattern     string `yaml:"pattern"`     // A regular expression pattern to validate the text
+	PatternHint string `yaml:"patternHint"` // A hint to display when the pattern does not match
 	Default     string `yaml:"default"`     // Default value for the entry
 	Value       string `yaml:"-"`           // Runtime value (not serialized to YAML)
+	Store       bool   `yaml:"store"`       // Whether to store the for the next run
 }
 
 // GetName returns the name of the text entry.
@@ -46,6 +50,8 @@ type ChoiceEntry struct {
 	Choices     []Choice `yaml:"choices"`     // Available choices for the entry
 	Default     string   `yaml:"default"`     // Default selected choice
 	Value       string   `yaml:"-"`           // Runtime value (not serialized to YAML)
+	Store       bool     `yaml:"store"`       // Whether to store the for the next run
+	ShowValues  bool     `yaml:"showValues"`  // Whether to show the internal values of the choices
 }
 
 // GetName returns the name of the choice entry.
@@ -66,6 +72,7 @@ type BooleanEntry struct {
 	Description string `yaml:"description"` // A description of the entry
 	Default     bool   `yaml:"default"`     // Default value for the entry
 	Value       bool   `yaml:"-"`           // Runtime value (not serialized to YAML)
+	Store       bool   `yaml:"store"`       // Whether to store the for the next run
 }
 
 // GetName returns the name of the boolean entry.
@@ -88,6 +95,7 @@ type Choice struct {
 type Configuration struct {
 	Entries  []Entry `yaml:"entries"`  // A list of entries in the configuration
 	Template string  `yaml:"template"` // A template string for rendering outputs
+	Overview bool    `yaml:"overview"` // Whether to show an overview at the beginning of the form
 }
 
 // UnmarshalYAML handles the deserialization of the Configuration structure.
@@ -97,12 +105,14 @@ func (c *Configuration) UnmarshalYAML(value *yaml.Node) error {
 	var raw struct {
 		Entries  []yaml.Node `yaml:"entries"`
 		Template string      `yaml:"template"`
+		Overview bool        `yaml:"overview"`
 	}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
 
 	c.Template = raw.Template
+	c.Overview = raw.Overview
 
 	// Parse each entry dynamically based on its type field
 	for _, node := range raw.Entries {
@@ -127,6 +137,18 @@ func (c *Configuration) UnmarshalYAML(value *yaml.Node) error {
 			if err := node.Decode(&choiceEntry); err != nil {
 				return err
 			}
+			if choiceEntry.ShowValues {
+				maxValueLength := 0
+				for _, choice := range choiceEntry.Choices {
+					if len(choice.Value) > maxValueLength {
+						maxValueLength = len(choice.Value)
+					}
+				}
+				for i, choice := range choiceEntry.Choices {
+					choiceEntry.Choices[i].Label = fmt.Sprintf("%s%s %s", choice.Value, strings.Repeat(" ", maxValueLength-len(choice.Value)), choice.Label)
+				}
+			}
+
 			choiceEntry.Value = choiceEntry.Default
 			entry = &choiceEntry
 		case "Boolean":
