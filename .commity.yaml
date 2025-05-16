@@ -33,7 +33,7 @@ entries:
     label: Commit Header
     description: What did you change?
     minLength: 10
-    maxLength: 50
+    maxLength: 80
     multiLine: false
     default: ""
 

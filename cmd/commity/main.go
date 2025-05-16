@@ -24,6 +24,19 @@ var style_error = lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
 var style_warning = lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
 var style_success = lipgloss.NewStyle().Foreground(lipgloss.Color("#233ee7"))
 
+var colorPrimary = lipgloss.AdaptiveColor{
+	Light: "#161616",
+	Dark:  "#f1f1f1",
+}
+var colorSecondary = lipgloss.AdaptiveColor{
+	Light: "#686868",
+	Dark:  "#a4a4a4",
+}
+var colorHighlight = lipgloss.AdaptiveColor{
+	Light: "#233ee7",
+	Dark:  "#237ce7",
+}
+
 type ParamMap map[string]string
 
 func (m *ParamMap) String() string {
@@ -167,18 +180,6 @@ func getTheme() *huh.Theme {
 	var t *huh.Theme = huh.ThemeBase()
 
 	// Colors
-	var colorPrimary = lipgloss.AdaptiveColor{
-		Light: "#161616",
-		Dark:  "#f1f1f1",
-	}
-	var colorSecondary = lipgloss.AdaptiveColor{
-		Light: "#686868",
-		Dark:  "#a4a4a4",
-	}
-	var colorHighlight = lipgloss.AdaptiveColor{
-		Light: "#233ee7",
-		Dark:  "#237ce7",
-	}
 
 	// Basic
 	t.Focused.Title = t.Focused.Title.Foreground(colorPrimary).Bold(true).PaddingTop(0)
@@ -257,7 +258,7 @@ func runCommity(directory string, paramMap ParamMap) {
 	}
 
 	// Load the configuration file
-	cfg, err := utils.LoadConfig(repoPath)
+	cfg, cfgPath, err := utils.LoadConfig(repoPath)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, style_error.Render(fmt.Sprintf("Error loading configuration: %v", err)))
 		os.Exit(1)
@@ -274,11 +275,24 @@ func runCommity(directory string, paramMap ParamMap) {
 		restoreParamMap(&paramMap, storedKeys, repoPath)
 	}
 
+	gitUserName, gitUserEmail, err := utils.GetGitIdentity(repoPath)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, style_error.Render(fmt.Sprintf("Error getting git identity: %v", err)))
+		os.Exit(1)
+	}
+
 	var groups []*huh.Group
 
 	if cfg.Overview {
+		paramStyle := lipgloss.NewStyle().Bold(true)
+		count := paramStyle.Render(fmt.Sprint(stagedFiles))
+		repo := paramStyle.Render(repoPath)
+		name := paramStyle.Render(gitUserName)
+		email := paramStyle.Render(gitUserEmail)
+		cfg := paramStyle.Render(cfgPath)
+
 		groups = append(groups, huh.NewGroup(huh.NewNote().
-			Title(fmt.Sprintf("Commiting to %s", repoPath)).Description(fmt.Sprintf("You have %d file(s) staged for commit", stagedFiles)),
+			Title("Overview").Description(fmt.Sprintf("Staged Files: %s\nRepository: %s\nIdentity: %s <%s>\nCommity Config: %s", count, repo, name, email, cfg)),
 		))
 	}
 

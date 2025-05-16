@@ -11,6 +11,7 @@ import (
 	"github.com/michaelrampl/commity/internal/config"
 
 	"github.com/go-git/go-git/v5"
+	gitcfg "github.com/go-git/go-git/v5/config"
 )
 
 // FindGitRepository searches for the nearest Git repository starting from the given directory.
@@ -65,33 +66,48 @@ func GetDataDir() (string, error) {
 }
 
 // LoadConfig locates and loads the configuration file.
-// It checks both the repository-specific and global locations for the configuration file.
+// It checks each directory from repoPath up to root for a `.commity.yaml`.
+// If none is found, it loads the global config from the user data dir.
 //
 // Arguments:
-// - directory: The starting directory to search for the configuration file.
+// - repoPath: The starting directory to search for the repo-specific config.
 //
 // Returns:
-// - A pointer to the Configuration struct loaded from the file, or an error if the file cannot be found or loaded.
-func LoadConfig(repoPath string) (*config.Configuration, error) {
+// - cfg:       The Configuration loaded from the found file.
+// - configPath: The full path to the config file that was loaded.
+// - error:     If no config file is found or parsing fails.
+func LoadConfig(repoPath string) (*config.Configuration, string, error) {
+	// 1) Try walking up from repoPath
+	dir := repoPath
+	for {
+		candidate := filepath.Join(dir, ".commity.yaml")
+		if _, err := os.Stat(candidate); err == nil {
+			// found a repo-local config
+			cfg, err := config.ParseConfigFile(candidate)
+			return cfg, candidate, err
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			break // reached filesystem root
+		}
+		dir = parent
+	}
 
+	// 2) Fallback to global config in your data dir
 	dataDir, err := GetDataDir()
 	if err != nil {
-		return nil, err
+		return nil, "", err
+	}
+	globalConfig := filepath.Join(dataDir, "commity.yaml")
+	if _, err := os.Stat(globalConfig); err == nil {
+		cfg, err := config.ParseConfigFile(globalConfig)
+		return cfg, globalConfig, err
 	}
 
-	configLocal := filepath.Join(repoPath, ".commity.yaml")
-	configGlobal := filepath.Join(dataDir, "commity.yaml")
-
-	var configPath string
-	if _, err := os.Stat(configLocal); err == nil {
-		configPath = configLocal
-	} else if _, err := os.Stat(configGlobal); err == nil {
-		configPath = configGlobal
-	} else {
-		return nil, fmt.Errorf("no config file found in %s or %s", configLocal, configGlobal)
-	}
-
-	return config.ParseConfigFile(configPath)
+	return nil, "", fmt.Errorf(
+		"no config file found in any parent of %s or in %s",
+		repoPath, globalConfig,
+	)
 }
 
 // RenderCommitMessage generates a commit message using the template string in the configuration.
@@ -193,4 +209,34 @@ func GetStagedFiles(repoPath string) (int, error) {
 	}
 
 	return stagedFiles, nil
+}
+
+// GetGitIdentity retrieves the Git identity (user.name and user.email)
+// by checking, in order, the local repo config, your global config, and then system config.
+// It returns the first scope in which both name and email are set.
+func GetGitIdentity(repoPath string) (name string, email string, err error) {
+	// Open the repository
+	repo, err := git.PlainOpen(repoPath)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to open Git repository: %w", err)
+	}
+
+	// Try each scope in precedence order
+	scopes := []gitcfg.Scope{
+		gitcfg.LocalScope,
+		gitcfg.GlobalScope,
+		gitcfg.SystemScope,
+	}
+	for _, scope := range scopes {
+		cfg, cfgErr := repo.ConfigScoped(scope)
+		if cfgErr != nil {
+			// e.g. no such file for system scope
+			continue
+		}
+		if cfg.User.Name != "" && cfg.User.Email != "" {
+			return cfg.User.Name, cfg.User.Email, nil
+		}
+	}
+
+	return "", "", fmt.Errorf("git user.name and/or user.email not set in any config scope")
 }
