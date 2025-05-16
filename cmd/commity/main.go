@@ -20,10 +20,6 @@ import (
 
 var VERSION = "MASTER"
 
-var style_error = lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
-var style_warning = lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
-var style_success = lipgloss.NewStyle().Foreground(lipgloss.Color("#233ee7"))
-
 var colorPrimary = lipgloss.AdaptiveColor{
 	Light: "#161616",
 	Dark:  "#f1f1f1",
@@ -36,6 +32,11 @@ var colorHighlight = lipgloss.AdaptiveColor{
 	Light: "#233ee7",
 	Dark:  "#237ce7",
 }
+
+var style_error = lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
+var style_warning = lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
+
+var style_success = lipgloss.NewStyle().Foreground(colorHighlight)
 
 type ParamMap map[string]string
 
@@ -283,16 +284,11 @@ func runCommity(directory string, paramMap ParamMap) {
 
 	var groups []*huh.Group
 
-	if cfg.Overview {
-		paramStyle := lipgloss.NewStyle().Bold(true)
-		count := paramStyle.Render(fmt.Sprint(stagedFiles))
-		repo := paramStyle.Render(repoPath)
-		name := paramStyle.Render(gitUserName)
-		email := paramStyle.Render(gitUserEmail)
-		cfg := paramStyle.Render(cfgPath)
+	paramStyle := lipgloss.NewStyle().Bold(true)
 
+	if cfg.Overview {
 		groups = append(groups, huh.NewGroup(huh.NewNote().
-			Title("Overview").Description(fmt.Sprintf("Staged Files: %s\nRepository: %s\nIdentity: %s <%s>\nCommity Config: %s", count, repo, name, email, cfg)),
+			Title("Overview").Description(fmt.Sprintf("Staged Files: %s\nRepository: %s\nIdentity: %s <%s>\nCommity Config: %s", paramStyle.Render(fmt.Sprint(stagedFiles)), paramStyle.Render(repoPath), paramStyle.Render(gitUserName), paramStyle.Render(gitUserEmail), paramStyle.Render(cfgPath))),
 		))
 	}
 
@@ -379,7 +375,7 @@ func runCommity(directory string, paramMap ParamMap) {
 		os.Exit(1)
 	}
 
-	err = utils.Commit(repoPath, msg)
+	err = utils.Commit(repoPath, msg, gitUserName, gitUserEmail)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, style_error.Render(fmt.Sprintf("Error while doing commit: %v", err)))
 		os.Exit(1)
@@ -389,8 +385,8 @@ func runCommity(directory string, paramMap ParamMap) {
 		updateParamMap(&cfg.Entries, storedKeys, repoPath)
 	}
 
-	fmt.Println(style_success.Render("Commit successful!"))
-	fmt.Println(msg)
+	fmt.Println(style_success.Render("Success!"))
+	fmt.Printf("Commited Files: %s\nRepository: %s\nIdentity: %s <%s>\nCommity Config: %s\n---\n%s", paramStyle.Render(fmt.Sprint(stagedFiles)), paramStyle.Render(repoPath), paramStyle.Render(gitUserName), paramStyle.Render(gitUserEmail), paramStyle.Render(cfgPath), msg)
 }
 
 func main() {

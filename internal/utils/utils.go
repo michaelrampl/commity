@@ -5,13 +5,16 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 	"text/template"
+	"time"
 
 	"github.com/michaelrampl/commity/internal/config"
 
 	"github.com/go-git/go-git/v5"
-	gitcfg "github.com/go-git/go-git/v5/config"
+	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 // FindGitRepository searches for the nearest Git repository starting from the given directory.
@@ -151,7 +154,7 @@ func RenderCommitMessage(config *config.Configuration) (string, error) {
 //
 // Returns:
 // - An error if the commit cannot be created.
-func Commit(repoPath string, message string) error {
+func Commit(repoPath string, message string, username string, email string) error {
 	// Open the Git repository.
 	repo, err := git.PlainOpen(repoPath)
 	if err != nil {
@@ -164,8 +167,18 @@ func Commit(repoPath string, message string) error {
 		return fmt.Errorf("failed to get Git worktree: %w", err)
 	}
 
+	// Build a Signature with the correct identity and timestamp
+	sig := &object.Signature{
+		Name:  username,
+		Email: email,
+		When:  time.Now(),
+	}
+
 	// Create the commit with the provided message.
-	_, err = worktree.Commit(message, &git.CommitOptions{})
+	_, err = worktree.Commit(message, &git.CommitOptions{
+		Author:    sig,
+		Committer: sig,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to create commit: %w", err)
 	}
@@ -212,31 +225,32 @@ func GetStagedFiles(repoPath string) (int, error) {
 }
 
 // GetGitIdentity retrieves the Git identity (user.name and user.email)
-// by checking, in order, the local repo config, your global config, and then system config.
-// It returns the first scope in which both name and email are set.
-func GetGitIdentity(repoPath string) (name string, email string, err error) {
-	// Open the repository
-	repo, err := git.PlainOpen(repoPath)
+// by asking the real `git` binary, which will honor includeIf and all other
+// config magic. It returns an error if either value is empty.
+func GetGitIdentity(repoPath string) (name, email string, err error) {
+	// helper to run `git -C repoPath config --get KEY`
+	run := func(key string) (string, error) {
+		cmd := exec.Command("git", "-C", repoPath, "config", "--get", key)
+		var out bytes.Buffer
+		cmd.Stdout = &out
+		cmd.Stderr = &out
+		if err := cmd.Run(); err != nil {
+			return "", fmt.Errorf("git config %s: %s", key, strings.TrimSpace(out.String()))
+		}
+		return strings.TrimSpace(out.String()), nil
+	}
+
+	name, err = run("user.name")
 	if err != nil {
-		return "", "", fmt.Errorf("failed to open Git repository: %w", err)
+		return "", "", fmt.Errorf("could not read user.name: %w", err)
+	}
+	email, err = run("user.email")
+	if err != nil {
+		return "", "", fmt.Errorf("could not read user.email: %w", err)
 	}
 
-	// Try each scope in precedence order
-	scopes := []gitcfg.Scope{
-		gitcfg.LocalScope,
-		gitcfg.GlobalScope,
-		gitcfg.SystemScope,
+	if name == "" || email == "" {
+		return "", "", fmt.Errorf("git user.name or user.email is empty")
 	}
-	for _, scope := range scopes {
-		cfg, cfgErr := repo.ConfigScoped(scope)
-		if cfgErr != nil {
-			// e.g. no such file for system scope
-			continue
-		}
-		if cfg.User.Name != "" && cfg.User.Email != "" {
-			return cfg.User.Name, cfg.User.Email, nil
-		}
-	}
-
-	return "", "", fmt.Errorf("git user.name and/or user.email not set in any config scope")
+	return name, email, nil
 }
